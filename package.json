@@ -1,6 +1,7 @@
 {
   "name": "yarn",
   "installationMethod": "unknown",
+  "homebrewGlobalPrefix": "/usr/local",
   "version": "0.28.0",
   "license": "BSD-2-Clause",
   "preferGlobal": true,

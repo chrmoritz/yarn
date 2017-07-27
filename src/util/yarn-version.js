@@ -9,7 +9,11 @@ import fs from 'fs';
 import path from 'path';
 
 // This will be bundled directly in the .js file for production builds
-const {version, installationMethod: originalInstallationMethod} = require('../../package.json');
+const {
+  version,
+  installationMethod: originalInstallationMethod,
+  homebrewGlobalPrefix: originalHomebrewGlobalPrefix,
+} = require('../../package.json');
 export {version};
 
 export async function getInstallationMethod(): Promise<InstallationMethod> {
@@ -38,3 +42,23 @@ export async function getInstallationMethod(): Promise<InstallationMethod> {
 }
 
 export type InstallationMethod = 'tar' | 'homebrew' | 'deb' | 'rpm' | 'msi' | 'chocolatey' | 'apk' | 'npm' | 'unknown';
+
+export async function getHomebrewGlobalPrefix(): Promise<string> {
+  let homebrewGlobalPrefix = originalHomebrewGlobalPrefix;
+
+  // Prioritize package.json in the parent directory, see comment for
+  // getInstallationMethod above.
+  try {
+    const manifestPath = path.join(__dirname, '..', 'package.json');
+    if (fs.existsSync(manifestPath)) {
+      // non-async version is deprecated
+      const manifest = await readJson(manifestPath);
+      if (manifest.homebrewGlobalPrefix) {
+        homebrewGlobalPrefix = manifest.homebrewGlobalPrefix;
+      }
+    }
+  } catch (e) {
+    // Ignore any errors; this is not critical functionality.
+  }
+  return homebrewGlobalPrefix;
+}
