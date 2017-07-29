@@ -10,6 +10,8 @@ import buildSubCommands from './_build-sub-commands.js';
 import Lockfile from '../../lockfile/wrapper.js';
 import {Install} from './install.js';
 import {Add} from './add.js';
+import {getInstallationMethod} from '../../util/yarn-version.js';
+import * as child from '../../util/child.js';
 import {run as runRemove} from './remove.js';
 import {run as runUpgrade} from './upgrade.js';
 import {run as runUpgradeInteractive} from './upgrade-interactive.js';
@@ -79,6 +81,11 @@ async function getGlobalPrefix(config: Config, flags: Object): Promise<string> {
     return String(config.getOption('prefix', true));
   } else if (process.env.PREFIX) {
     return process.env.PREFIX;
+  }
+
+  const installationMethod = await getInstallationMethod();
+  if (process.platform === 'darwin' && installationMethod === 'homebrew') {
+    return child.spawn('brew', ['--prefix']);
   }
 
   let prefix = FALLBACK_GLOBAL_PREFIX;
