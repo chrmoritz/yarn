@@ -12,6 +12,8 @@ import envReplace from '../util/env-replace.js';
 import Registry from './base-registry.js';
 import {addSuffix} from '../util/misc';
 import {getPosixPath, resolveWithHome} from '../util/path';
+import {getInstallationMethod} from '../util/yarn-version.js';
+import * as child from '../util/child.js';
 
 const userHome = require('../util/user-home-dir').default;
 const path = require('path');
@@ -140,6 +142,17 @@ export default class NpmRegistry extends Registry {
     while (foldersFromRootToCwd.length > 1) {
       possibles.push([false, path.join(foldersFromRootToCwd.join(path.sep), localfile)]);
       foldersFromRootToCwd.pop();
+    }
+
+    // homebrew npm's npmrc --> $(brew --prefix)/lib/node_modules/npm/npmrc
+    if (process.platform !== 'win32' && (await getInstallationMethod()) === 'homebrew') {
+      let brewPrefix;
+      try {
+        brewPrefix = await child.spawn('brew', ['--prefix']);
+      } catch (ex) {
+        brewPrefix = '/usr/local';
+      }
+      possibles.push([false, path.join(brewPrefix, 'lib', 'node_modules', 'npm', filename)]);
     }
 
     const actuals = [];
