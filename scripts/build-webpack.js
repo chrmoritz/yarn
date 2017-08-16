@@ -39,6 +39,9 @@ const compiler = webpack({
     libraryTarget: 'commonjs2',
   },
   target: 'node',
+  node: {
+    __dirname: false,
+  },
 });
 
 compiler.run((err, stats) => {
@@ -77,6 +80,9 @@ const compilerLegacy = webpack({
     libraryTarget: 'commonjs2',
   },
   target: 'node',
+  node: {
+    __dirname: false,
+  },
 });
 
 compilerLegacy.run((err, stats) => {
