@@ -37,6 +37,9 @@ const compiler = webpack({
     path: path.join(basedir, 'artifacts'),
   },
   target: 'node',
+  node: {
+    __dirname: false,
+  },
 });
 
 compiler.run((err, stats) => {
@@ -73,6 +76,9 @@ const compilerLegacy = webpack({
     path: path.join(basedir, 'artifacts'),
   },
   target: 'node',
+  node: {
+    __dirname: false,
+  },
 });
 
 compilerLegacy.run((err, stats) => {
