@@ -185,12 +185,16 @@ export default class NpmRegistry extends Registry {
   }
 
   async getPossibleConfigLocations(filename: string, reporter: Reporter): Promise<Array<[boolean, string, string]>> {
-    // npmrc --> ./.npmrc, ~/.npmrc, ${prefix}/etc/npmrc
+    // npmrc --> ./.npmrc, ~/.npmrc, ${prefix}/etc/npmrc, HOMEBREW_PREFIX/lib/node_modules/npm/npmrc
     const localfile = '.' + filename;
     const possibles = [
       [false, path.join(this.cwd, localfile)],
       [true, this.config.userconfig || path.join(userHome, localfile)],
       [false, path.join(getGlobalPrefix(), 'etc', filename)],
+      [
+        false,
+        path.join(path.dirname(process.execPath), '..', '..', '..', '..', 'lib', 'node_modules', 'npm', filename),
+      ],
     ];
 
     // When home directory for global install is different from where $HOME/npmrc is stored,
