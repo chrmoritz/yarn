@@ -192,8 +192,15 @@ export default class NpmRegistry extends Registry {
       [true, this.config.userconfig || path.join(userHome, localfile)],
       [false, path.join(getGlobalPrefix(), 'etc', filename)],
       [
+        // relative to HOMEBREW_PREFIX/Cellar/node/$NODE_VERSION/bin/node
         false,
         path.join(path.dirname(process.execPath), '..', '..', '..', '..', 'lib', 'node_modules', 'npm', filename),
+      ],
+      [
+        // relative to HOMEBREW_PREFIX/Homebrew/Cellar/node/$NODE_VERSION/bin/node
+        // = HOMEBREW_REPOSITORY/Cellar/node/$NODE_VERSION/bin/node (less common)
+        false,
+        path.join(path.dirname(process.execPath), '..', '..', '..', '..', '..', 'lib', 'node_modules', 'npm', filename),
       ],
     ];
 
