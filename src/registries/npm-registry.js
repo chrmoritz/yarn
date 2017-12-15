@@ -185,24 +185,27 @@ export default class NpmRegistry extends Registry {
   }
 
   async getPossibleConfigLocations(filename: string, reporter: Reporter): Promise<Array<[boolean, string, string]>> {
-    // npmrc --> ./.npmrc, ~/.npmrc, ${prefix}/etc/npmrc, HOMEBREW_PREFIX/lib/node_modules/npm/npmrc
+    // npmrc --> ./.npmrc, ~/.npmrc, ${prefix}/etc/npmrc
     const localfile = '.' + filename;
     const possibles = [
       [false, path.join(this.cwd, localfile)],
       [true, this.config.userconfig || path.join(userHome, localfile)],
       [false, path.join(getGlobalPrefix(), 'etc', filename)],
-      [
-        // relative to HOMEBREW_PREFIX/Cellar/node/$NODE_VERSION/bin/node
-        false,
-        path.join(path.dirname(process.execPath), '..', '..', '..', '..', 'lib', 'node_modules', 'npm', filename),
-      ],
-      [
+    ];
+
+    // npmrc --> HOMEBREW_PREFIX/lib/node_modules/npm/npmrc
+    const homebrew_cellar = path.join(path.dirname(process.execPath), '..', '..', '..');
+    if (path.basename(homebrew_cellar) === 'Cellar') {
+      if (path.basename(path.dirname(homebrew_cellar)) === 'Homebrew') {
         // relative to HOMEBREW_PREFIX/Homebrew/Cellar/node/$NODE_VERSION/bin/node
         // = HOMEBREW_REPOSITORY/Cellar/node/$NODE_VERSION/bin/node (less common)
-        false,
-        path.join(path.dirname(process.execPath), '..', '..', '..', '..', '..', 'lib', 'node_modules', 'npm', filename),
-      ],
-    ];
+        possibles.push([false, path.join(homebrew_cellar, '..', '..', 'lib', 'node_modules', 'npm', filename)]);
+      }
+      else {
+        // relative to HOMEBREW_PREFIX/Cellar/node/$NODE_VERSION/bin/node
+        possibles.push([false, path.join(homebrew_cellar, '..', 'lib', 'node_modules', 'npm', filename)]);
+      }
+    }
 
     // When home directory for global install is different from where $HOME/npmrc is stored,
     // E.g. /usr/local/share vs /root on linux machines, check the additional location
