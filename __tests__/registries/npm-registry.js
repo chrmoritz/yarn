@@ -701,6 +701,17 @@ describe('getScope functional test', () => {
 });
 
 describe('getPossibleConfigLocations', () => {
+  beforeAll(() => {
+    jest.mock('../../src/util/yarn-version.js', () => ({
+      getInstallationMethod: () => Promise.resolve('homebrew'),
+    }));
+    if (process.platform !== 'win32') {
+      jest.mock('../../src/util/child.js', () => ({
+        spawn: jest.fn().mockReturnValue(Promise.resolve('brewPrefix')),
+      }));
+    }
+  });
+
   test('searches recursively to home directory', async () => {
     const testCwd = './project/subdirectory';
     const {mockRequestManager, mockRegistries} = createMocks();
@@ -716,6 +727,33 @@ describe('getPossibleConfigLocations', () => {
         expect.stringContaining(JSON.stringify(pathJoin(homeDir, '.npmrc'))),
       ]),
     );
+  });
+
+  test('searches for known global config files', async () => {
+    const {mockRequestManager, mockRegistries} = createMocks();
+    const reporter = new BufferReporter({verbose: true});
+    const npmRegistry = new NpmRegistry('./', mockRegistries, mockRequestManager, reporter);
+    const spawn = require('../../src/util/child').spawn;
+
+    npmRegistry.config.userconfig = 'userConfigDir/.nmprc';
+    process.env.PREFIX = 'globalPrefixDir';
+    const expectedGlobalConfigs = [
+      expect.stringContaining(JSON.stringify(pathJoin('userConfigDir', '.nmprc'))),
+      expect.stringContaining(JSON.stringify(pathJoin('globalPrefixDir', 'etc', 'npmrc'))),
+    ];
+
+    if (process.platform !== 'win32') {
+      expectedGlobalConfigs.push(
+        expect.stringContaining(JSON.stringify(pathJoin('brewPrefix', 'lib', 'node_modules', 'npm', 'npmrc'))),
+      );
+    }
+
+    await npmRegistry.getPossibleConfigLocations('npmrc', reporter);
+    if (process.platform !== 'win32') {
+      expect(spawn).toHaveBeenCalledWith('brew', ['--prefix']);
+    }
+    const logs = reporter.getBuffer().map(logItem => logItem.data);
+    expect(logs).toEqual(expect.arrayContaining(expectedGlobalConfigs));
   });
 });
 

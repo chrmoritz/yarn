@@ -18,6 +18,8 @@ import {default as userHome, home} from '../util/user-home-dir';
 import path from 'path';
 import url from 'url';
 import ini from 'ini';
+import {getInstallationMethod} from '../util/yarn-version.js';
+import * as child from '../util/child.js';
 
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org/';
 const REGEX_REGISTRY_HTTP_PROTOCOL = /^https?:/i;
@@ -51,6 +53,14 @@ function getGlobalPrefix(): string {
     }
 
     return prefix;
+  }
+}
+
+async function getHomebrewPrefix(): Promise<string> {
+  try {
+    return await child.spawn('brew', ['--prefix']);
+  } catch (e) {
+    return '/usr/local';
   }
 }
 
@@ -220,6 +230,11 @@ export default class NpmRegistry extends Registry {
     // E.g. /usr/local/share vs /root on linux machines, check the additional location
     if (home !== userHome) {
       possibles.push([true, path.join(home, localfile)]);
+    }
+
+    // homebrew npm's npmrc --> $(brew --prefix)/lib/node_modules/npm/npmrc
+    if (process.platform !== 'win32' && (await getInstallationMethod()) === 'homebrew') {
+      possibles.push([false, path.join(await getHomebrewPrefix(), 'lib', 'node_modules', 'npm', filename)]);
     }
 
     // npmrc --> ../.npmrc, ../../.npmrc, etc.
